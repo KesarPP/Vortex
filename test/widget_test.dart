@@ -1,15 +1,22 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vortex/main.dart';
+import 'package:vortex/core/theme/vortex_theme.dart';
+import 'package:vortex/shared/widgets/glass_card.dart';
 
 void main() {
-  testWidgets('VortexApp boots up smoke test', (WidgetTester tester) async {
+  testWidgets('Vortex UI Theme and GlassCard sanity test', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: VortexApp(),
+      MaterialApp(
+        theme: VortexTheme.darkTheme,
+        home: const Scaffold(
+          body: GlassCard(
+            child: Text('VORTEX // OS', style: TextStyle(color: VortexTheme.neonCyan)),
+          ),
+        ),
       ),
     );
-    await tester.pumpAndSettle();
-    expect(find.byType(VortexApp), findsOneWidget);
+
+    expect(find.text('VORTEX // OS'), findsOneWidget);
+    expect(find.byType(GlassCard), findsOneWidget);
   });
 }

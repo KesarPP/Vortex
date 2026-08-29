@@ -8,6 +8,7 @@ class GlassCard extends StatelessWidget {
   final double? height;
   final EdgeInsetsGeometry padding;
   final BorderRadiusGeometry? borderRadius;
+  final String? semanticLabel;
 
   const GlassCard({
     super.key,
@@ -16,11 +17,12 @@ class GlassCard extends StatelessWidget {
     this.height,
     this.padding = const EdgeInsets.all(16.0),
     this.borderRadius,
+    this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
+    final cardContent = ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.circular(16.0),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
@@ -29,15 +31,15 @@ class GlassCard extends StatelessWidget {
           height: height,
           padding: padding,
           decoration: BoxDecoration(
-            color: VortexTheme.surface.withOpacity(0.4),
+            color: VortexTheme.surface.withValues(alpha: 0.4),
             borderRadius: borderRadius ?? BorderRadius.circular(16.0),
             border: Border.all(
-              color: VortexTheme.neonCyan.withOpacity(0.2),
+              color: VortexTheme.neonCyan.withValues(alpha: 0.2),
               width: 1.0,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10.0,
                 spreadRadius: 2.0,
               )
@@ -47,5 +49,15 @@ class GlassCard extends StatelessWidget {
         ),
       ),
     );
+
+    if (semanticLabel != null) {
+      return Semantics(
+        label: semanticLabel,
+        container: true,
+        child: cardContent,
+      );
+    }
+
+    return cardContent;
   }
 }
