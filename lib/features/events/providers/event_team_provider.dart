@@ -370,7 +370,7 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
 
   void toggleSeekingMembers(String teamId) {
     state = state.copyWith(
-      allTeams: state.allTeams.map((t) {
+      allTeams: state.allTeams.map<TeamModel>((t) {
         if (t.id == teamId) {
           final updatedSeeking = !t.isSeekingMembers;
           return t.copyWith(isSeekingMembers: updatedSeeking);
