@@ -228,13 +228,16 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
     required List<String> requiredSkills,
   }) {
     final auth = ref.read(authProvider);
+    final profile = ref.read(participantProfileProvider);
     final newTeamId = 'TEAM-${DateTime.now().millisecondsSinceEpoch % 10000}';
     final leader = TeamMember(
       id: auth.uid ?? 'usr-current',
-      name: auth.displayName ?? 'Hacker Leader',
+      name: (profile.name.isNotEmpty && profile.name != 'Hacker')
+          ? profile.name
+          : (auth.displayName ?? 'Team Leader'),
       role: 'Team Lead',
-      email: auth.email ?? 'hacker@vortex.os',
-      avatar: '⚡',
+      email: auth.email ?? '${(auth.displayName ?? "leader").toLowerCase()}@vortex.os',
+      avatar: profile.avatar.isNotEmpty ? profile.avatar : '⚡',
       isLeader: true,
       isCheckedIn: true,
     );
@@ -364,35 +367,36 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
     _saveTeams();
   }
 
-  void addMemberToMyTeam(String name, String role, String avatar) {
-    final myTeam = state.myTeam;
-    if (myTeam == null || myTeam.isFull) return;
+  void leaveOrDisbandTeam(String teamId) {
+    final auth = ref.read(authProvider);
+    final uid = auth.uid;
 
-    final newMember = TeamMember(
-      id: 'usr-${DateTime.now().millisecondsSinceEpoch % 1000}',
-      name: name,
-      role: role,
-      email: '${name.toLowerCase().replaceAll(' ', '.')}@vortex.os',
-      avatar: avatar,
-      isCheckedIn: true,
-    );
-
-    final updatedMembers = [...myTeam.members, newMember];
-    final isNowFull = updatedMembers.length >= myTeam.maxCapacity;
-
-    final updatedTeams = state.allTeams.map((t) {
-      if (t.id == myTeam.id) {
-        return t.copyWith(
-          members: updatedMembers,
-          status: isNowFull ? TeamStatus.approved : TeamStatus.recruiting,
-          approvedAt: isNowFull ? 'Approved by Organizer' : null,
-          tableNumber: isNowFull ? 'Table B-24' : t.tableNumber,
-        );
+    final updatedTeams = <TeamModel>[];
+    for (var team in state.allTeams) {
+      if (team.id == teamId) {
+        final isLeader = team.members.any((m) => m.id == uid && m.isLeader);
+        if (isLeader) {
+          // Disband whole team if leader leaves
+          continue;
+        } else {
+          // Remove single member
+          final remaining = team.members.where((m) => m.id != uid).toList();
+          updatedTeams.add(team.copyWith(members: remaining));
+        }
+      } else {
+        updatedTeams.add(team);
       }
-      return t;
-    }).toList();
+    }
 
-    state = state.copyWith(allTeams: updatedTeams);
+    state = state.copyWith(
+      allTeams: updatedTeams,
+      events: state.events.map((e) {
+        if (e.registeredTeamId == teamId) {
+          return e.copyWith(isRegistered: false, registeredTeamId: null);
+        }
+        return e;
+      }).toList(),
+    );
     _saveTeams();
   }
 

@@ -472,8 +472,46 @@ class _TeamDashboardViewState extends ConsumerState<TeamDashboardView> {
             const SizedBox(height: 24),
 
             // SQUAD MEMBERS LIST
-            Text('SQUAD MEMBERS (${myTeam.members.length}/${myTeam.maxCapacity})',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: VortexTheme.textSecondary, letterSpacing: 1.5)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text('SQUAD MEMBERS (${myTeam.members.length}/${myTeam.maxCapacity})',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: VortexTheme.textSecondary, letterSpacing: 1.5)),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: VortexTheme.surface,
+                        title: const Text('Leave / Disband Team?', style: TextStyle(color: Colors.white)),
+                        content: const Text(
+                          'Are you sure you want to leave or disband this squad? You will be able to create a fresh team or join another one.',
+                          style: TextStyle(color: VortexTheme.textSecondary),
+                        ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL')),
+                          ElevatedButton(
+                            onPressed: () {
+                              ref.read(eventTeamProvider.notifier).leaveOrDisbandTeam(myTeam.id);
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('You have left the team.')),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                            child: const Text('LEAVE TEAM'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  icon: const Icon(LucideIcons.logOut, size: 14, color: Colors.redAccent),
+                  label: const Text('LEAVE TEAM', style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
 
             ...myTeam.members.map((member) {
