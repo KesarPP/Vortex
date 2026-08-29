@@ -115,6 +115,7 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
 
       // 2. Sync from Firestore if initialized
       if (FirebaseService.isInitialized) {
+        debugPrint('[Firestore Sync] Fetching teams from Firestore collection "teams"...');
         final snapshot = await FirebaseFirestore.instance.collection('teams').get();
         if (snapshot.docs.isNotEmpty) {
           loadedTeams = snapshot.docs.map((doc) => TeamModel.fromJson(doc.data())).toList();
@@ -124,10 +125,15 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
           // Update local cache with fresh data
           final encodedList = loadedTeams.map((t) => t.toJson()).toList();
           await prefs.setString(_teamsPrefsKey, jsonEncode(encodedList));
+          debugPrint('[Firestore Sync] Loaded ${loadedTeams.length} teams from Firestore.');
+        } else {
+          debugPrint('[Firestore Sync] "teams" collection is currently empty on Firestore.');
         }
+      } else {
+        debugPrint('[Firestore Sync] Firebase is not initialized. Using local cache only.');
       }
     } catch (e) {
-      debugPrint('Error loading teams: $e');
+      debugPrint('[Firestore Sync Error] Error loading teams: $e');
     }
   }
 
@@ -159,15 +165,23 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
 
       // 2. Sync to Firestore if initialized
       if (FirebaseService.isInitialized) {
+        if (state.allTeams.isEmpty) {
+          debugPrint('[Firestore Sync] No teams to save to Firestore.');
+          return;
+        }
+        debugPrint('[Firestore Sync] Saving ${state.allTeams.length} teams to Firestore...');
         final batch = FirebaseFirestore.instance.batch();
         for (var team in state.allTeams) {
           final docRef = FirebaseFirestore.instance.collection('teams').doc(team.id);
           batch.set(docRef, team.toJson(), SetOptions(merge: true));
         }
         await batch.commit();
+        debugPrint('[Firestore Sync] Successfully committed ${state.allTeams.length} teams to Firestore!');
+      } else {
+        debugPrint('[Firestore Sync] Firebase not initialized. Saved to local storage only.');
       }
     } catch (e) {
-      debugPrint('Error saving teams: $e');
+      debugPrint('[Firestore Sync Error] Error saving teams to Firestore: $e');
     }
   }
 
