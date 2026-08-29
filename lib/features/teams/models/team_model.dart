@@ -82,6 +82,7 @@ class TeamModel {
   final String? approvedAt;
   final List<String> requiredSkills;
   final List<JoinRequest> joinRequests;
+  final bool isSeekingMembers;
 
   // Judging Scores
   final double? innovationScore;
@@ -101,6 +102,7 @@ class TeamModel {
     this.approvedAt,
     this.requiredSkills = const [],
     this.joinRequests = const [],
+    this.isSeekingMembers = true,
     this.innovationScore,
     this.technicalScore,
     this.uiuxScore,
@@ -135,6 +137,7 @@ class TeamModel {
               ?.map((e) => JoinRequest.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      isSeekingMembers: json['isSeekingMembers'] ?? true,
       innovationScore: json['innovationScore']?.toDouble(),
       technicalScore: json['technicalScore']?.toDouble(),
       uiuxScore: json['uiuxScore']?.toDouble(),
@@ -154,6 +157,7 @@ class TeamModel {
         'approvedAt': approvedAt,
         'requiredSkills': requiredSkills,
         'joinRequests': joinRequests.map((j) => j.toJson()).toList(),
+        'isSeekingMembers': isSeekingMembers,
         'innovationScore': innovationScore,
         'technicalScore': technicalScore,
         'uiuxScore': uiuxScore,
@@ -169,6 +173,7 @@ class TeamModel {
     String? approvedAt,
     List<String>? requiredSkills,
     List<JoinRequest>? joinRequests,
+    bool? isSeekingMembers,
     double? innovationScore,
     double? technicalScore,
     double? uiuxScore,
@@ -186,6 +191,7 @@ class TeamModel {
       approvedAt: approvedAt ?? this.approvedAt,
       requiredSkills: requiredSkills ?? this.requiredSkills,
       joinRequests: joinRequests ?? this.joinRequests,
+      isSeekingMembers: isSeekingMembers ?? this.isSeekingMembers,
       innovationScore: innovationScore ?? this.innovationScore,
       technicalScore: technicalScore ?? this.technicalScore,
       uiuxScore: uiuxScore ?? this.uiuxScore,

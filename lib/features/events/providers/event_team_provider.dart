@@ -92,6 +92,11 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
           ),
         ) {
     _loadTeams();
+    ref.listen(authProvider, (previous, next) {
+      if (previous?.uid != next.uid) {
+        refreshUserTeamStatus();
+      }
+    });
   }
 
   Future<void> _loadTeams() async {
@@ -163,6 +168,39 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
       }
     } catch (e) {
       debugPrint('Error saving teams: $e');
+    }
+  }
+
+  void refreshUserTeamStatus() {
+    final auth = ref.read(authProvider);
+    final uid = auth.uid;
+
+    if (uid == null) {
+      // Clear registration status if logged out
+      state = state.copyWith(
+        events: state.events.map((e) => e.copyWith(isRegistered: false, registeredTeamId: null)).toList(),
+      );
+      return;
+    }
+
+    // If logged in, find if they are in a team
+    try {
+      final userTeam = state.allTeams.firstWhere(
+        (t) => t.members.any((m) => m.id == uid),
+      );
+      state = state.copyWith(
+        events: state.events.map((e) {
+          if (e.id == userTeam.eventId) {
+            return e.copyWith(isRegistered: true, registeredTeamId: userTeam.id);
+          }
+          return e.copyWith(isRegistered: false, registeredTeamId: null);
+        }).toList(),
+      );
+    } catch (_) {
+      // Not in any team
+      state = state.copyWith(
+        events: state.events.map((e) => e.copyWith(isRegistered: false, registeredTeamId: null)).toList(),
+      );
     }
   }
 
@@ -310,6 +348,19 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
     }).toList();
 
     state = state.copyWith(allTeams: updatedTeams);
+    _saveTeams();
+  }
+
+  void toggleSeekingMembers(String teamId) {
+    state = state.copyWith(
+      allTeams: state.allTeams.map((t) {
+        if (t.id == teamId) {
+          final updatedSeeking = !t.isSeekingMembers;
+          return t.copyWith(isSeekingMembers: updatedSeeking);
+        }
+        return t;
+      }).toList(),
+    );
     _saveTeams();
   }
 

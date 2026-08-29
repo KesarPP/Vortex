@@ -27,6 +27,24 @@ class ParticipantProfileNotifier extends StateNotifier<ParticipantProfile> {
           ),
         );
 
+  void reset() {
+    state = ParticipantProfile(
+      id: 'usr-new',
+      name: 'Hacker',
+      handle: '@hacker',
+      avatar: '👤',
+      teamName: '',
+      tableNumber: '',
+      bio: 'Add a bio...',
+      skills: {},
+      lookingFor: [],
+      githubUrl: '',
+      discordHandle: '',
+      isCheckedIn: false,
+      mealCoupons: {},
+    );
+  }
+
   void updateProfile({
     String? name,
     String? handle,

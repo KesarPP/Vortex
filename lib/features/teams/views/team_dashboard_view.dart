@@ -232,7 +232,7 @@ class _TeamDashboardViewState extends ConsumerState<TeamDashboardView> {
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(color: VortexTheme.textSecondary, letterSpacing: 1.5)),
             const SizedBox(height: 12),
 
-            ...eventState.allTeams.where((t) => t.eventId == activeEvent.id && !t.isFull).map((team) {
+            ...eventState.allTeams.where((t) => t.eventId == activeEvent.id && !t.isFull && t.isSeekingMembers).map((team) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 14.0),
                 child: GlassCard(
@@ -304,13 +304,29 @@ class _TeamDashboardViewState extends ConsumerState<TeamDashboardView> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: myTeam.isFull ? VortexTheme.telemetryGreen.withOpacity(0.2) : Colors.orangeAccent.withOpacity(0.2),
+                              color: myTeam.isFull
+                                  ? VortexTheme.telemetryGreen.withOpacity(0.2)
+                                  : (myTeam.isSeekingMembers ? VortexTheme.neonCyan.withOpacity(0.2) : Colors.white10),
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: myTeam.isFull ? VortexTheme.telemetryGreen : Colors.orangeAccent),
+                              border: Border.all(
+                                color: myTeam.isFull
+                                    ? VortexTheme.telemetryGreen
+                                    : (myTeam.isSeekingMembers ? VortexTheme.neonCyan : VortexTheme.textSecondary.withOpacity(0.4)),
+                              ),
                             ),
                             child: Text(
-                              myTeam.isFull ? '● SQUAD FULL (${myTeam.members.length}/${myTeam.maxCapacity})' : '● RECRUITING (${myTeam.members.length}/${myTeam.maxCapacity})',
-                              style: TextStyle(color: myTeam.isFull ? VortexTheme.telemetryGreen : Colors.orangeAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                              myTeam.isFull
+                                  ? '● SQUAD FULL (${myTeam.members.length}/${myTeam.maxCapacity})'
+                                  : (myTeam.isSeekingMembers
+                                      ? '● SEEKING MEMBERS (${myTeam.members.length}/${myTeam.maxCapacity})'
+                                      : '● RECRUITING OFF (${myTeam.members.length}/${myTeam.maxCapacity})'),
+                              style: TextStyle(
+                                color: myTeam.isFull
+                                    ? VortexTheme.telemetryGreen
+                                    : (myTeam.isSeekingMembers ? VortexTheme.neonCyan : VortexTheme.textSecondary),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -319,14 +335,55 @@ class _TeamDashboardViewState extends ConsumerState<TeamDashboardView> {
                   ),
                 ),
                 if (!myTeam.isFull)
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      ref.read(eventTeamProvider.notifier).addMemberToMyTeam('Devon Miles', 'Frontend Dev', '⚡');
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Simulated Member Added to Team!')));
+                  InkWell(
+                    onTap: () {
+                      ref.read(eventTeamProvider.notifier).toggleSeekingMembers(myTeam.id);
+                      final willBeSeeking = !myTeam.isSeekingMembers;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: VortexTheme.surface,
+                          content: Text(
+                            willBeSeeking
+                                ? '🟢 Seeking Members: Team is now visible to other participants!'
+                                : '⚪ Recruiting Paused: Team is now hidden from other participants.',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      );
                     },
-                    icon: const Icon(LucideIcons.userPlus, size: 14),
-                    label: const Text('ADD MEMBER'),
-                    style: ElevatedButton.styleFrom(backgroundColor: VortexTheme.neonCyan, foregroundColor: Colors.black),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: myTeam.isSeekingMembers
+                            ? VortexTheme.telemetryGreen.withOpacity(0.15)
+                            : VortexTheme.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: myTeam.isSeekingMembers ? VortexTheme.telemetryGreen : VortexTheme.textSecondary.withOpacity(0.4),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            myTeam.isSeekingMembers ? LucideIcons.checkCircle : LucideIcons.eyeOff,
+                            size: 14,
+                            color: myTeam.isSeekingMembers ? VortexTheme.telemetryGreen : VortexTheme.textSecondary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            myTeam.isSeekingMembers ? 'SEEKING: ON' : 'SEEKING: OFF',
+                            style: TextStyle(
+                              color: myTeam.isSeekingMembers ? VortexTheme.telemetryGreen : VortexTheme.textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
               ],
             ),

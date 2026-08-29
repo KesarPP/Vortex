@@ -128,7 +128,7 @@ class _TeamMatchmakerViewState extends ConsumerState<TeamMatchmakerView> {
                   const SizedBox(height: 16),
 
                   // Candidate Teams
-                  ...ref.watch(eventTeamProvider).allTeams.where((t) => t.status == TeamStatus.recruiting).map((team) {
+                  ...ref.watch(eventTeamProvider).allTeams.where((t) => t.isSeekingMembers && !t.isFull).map((team) {
                     final int matchScore = MatchmakerEngine.calculateCompatibility(
                       userSkills: myProfile.skills,
                       userLookingFor: myProfile.lookingFor,

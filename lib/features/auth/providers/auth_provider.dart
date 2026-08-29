@@ -220,6 +220,10 @@ class AuthNotifier extends StateNotifier<AuthUserState> {
       }
     } catch (_) {}
     await _clearSession();
+    
+    // Reset participant profile to avoid stale data leaking to next user
+    ref.read(participantProfileProvider.notifier).reset();
+    
     state = AuthUserState(isAuthenticated: false, isInitializing: false);
   }
 }
