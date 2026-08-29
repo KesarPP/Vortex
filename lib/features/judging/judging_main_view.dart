@@ -6,15 +6,25 @@ import '../../core/theme/vortex_theme.dart';
 import 'views/scoring_slider_view.dart';
 import 'views/public_stage_view.dart';
 
-class JudgingMainView extends StatefulWidget {
+import '../events/providers/event_team_provider.dart';
+
+class JudgingMainView extends ConsumerStatefulWidget {
   const JudgingMainView({super.key});
 
   @override
-  State<JudgingMainView> createState() => _JudgingMainViewState();
+  ConsumerState<JudgingMainView> createState() => _JudgingMainViewState();
 }
 
-class _JudgingMainViewState extends State<JudgingMainView> {
+class _JudgingMainViewState extends ConsumerState<JudgingMainView> {
   int _activeMode = 0; // 0: Judge Evaluation Sheet, 1: Stage Projector
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(eventTeamProvider.notifier).fetchOnlyFromFirebase();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,15 +86,21 @@ class _JudgingMainViewState extends State<JudgingMainView> {
                 ),
               ),
             ),
-          Consumer(
-            builder: (context, ref, _) {
-              return IconButton(
-                icon: const Icon(LucideIcons.logOut, color: Colors.redAccent),
-                tooltip: 'Sign Out',
-                onPressed: () {
-                  ref.read(authProvider.notifier).signOut();
-                },
+          IconButton(
+            icon: const Icon(LucideIcons.refreshCw, size: 16, color: VortexTheme.neonCyan),
+            tooltip: 'Sync Live Firebase Data',
+            onPressed: () {
+              ref.read(eventTeamProvider.notifier).fetchOnlyFromFirebase();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('⚡ Synced live from Firebase Cloud Firestore.')),
               );
+            },
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.logOut, color: Colors.redAccent),
+            tooltip: 'Sign Out',
+            onPressed: () {
+              ref.read(authProvider.notifier).signOut();
             },
           ),
           const SizedBox(width: 8),

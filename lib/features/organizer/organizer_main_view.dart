@@ -10,15 +10,25 @@ import 'views/mentor_dispatch_grid_view.dart';
 import 'views/broadcast_console_view.dart';
 import 'views/scoring_bias_engine_view.dart';
 
-class OrganizerMainView extends StatefulWidget {
+import '../events/providers/event_team_provider.dart';
+
+class OrganizerMainView extends ConsumerStatefulWidget {
   const OrganizerMainView({super.key});
 
   @override
-  State<OrganizerMainView> createState() => _OrganizerMainViewState();
+  ConsumerState<OrganizerMainView> createState() => _OrganizerMainViewState();
 }
 
-class _OrganizerMainViewState extends State<OrganizerMainView> {
+class _OrganizerMainViewState extends ConsumerState<OrganizerMainView> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(eventTeamProvider.notifier).fetchOnlyFromFirebase();
+    });
+  }
 
   final List<Widget> _views = const [
     TelemetryDashboardContent(),
@@ -74,15 +84,21 @@ class _OrganizerMainViewState extends State<OrganizerMainView> {
                 ],
               ),
             ),
-          Consumer(
-            builder: (context, ref, _) {
-              return IconButton(
-                icon: const Icon(LucideIcons.logOut, color: Colors.redAccent),
-                tooltip: 'Sign Out',
-                onPressed: () {
-                  ref.read(authProvider.notifier).signOut();
-                },
+          IconButton(
+            icon: const Icon(LucideIcons.refreshCw, size: 16, color: VortexTheme.neonCyan),
+            tooltip: 'Sync Live Firebase Data',
+            onPressed: () {
+              ref.read(eventTeamProvider.notifier).fetchOnlyFromFirebase();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('⚡ Synced live from Firebase Cloud Firestore.')),
               );
+            },
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.logOut, color: Colors.redAccent),
+            tooltip: 'Sign Out',
+            onPressed: () {
+              ref.read(authProvider.notifier).signOut();
             },
           ),
           const SizedBox(width: 8),

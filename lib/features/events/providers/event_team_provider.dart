@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import '../../coupons/models/food_coupon.dart';
 import '../../scanner/models/scan_log.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../participant/providers/participant_provider.dart';
+import '../../../shared/models/user_role.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/services/firebase_service.dart';
 
@@ -92,11 +94,52 @@ class EventTeamNotifier extends StateNotifier<EventTeamState> {
           ),
         ) {
     _loadTeams();
+    _startFirestoreRealtimeSync();
     ref.listen(authProvider, (previous, next) {
-      if (previous?.uid != next.uid) {
+      if (previous?.uid != next.uid || previous?.role != next.role) {
         refreshUserTeamStatus();
+        if (next.role == UserRole.organizer || next.role == UserRole.judge) {
+          fetchOnlyFromFirebase();
+        }
       }
     });
+  }
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _firestoreSubscription;
+
+  @override
+  void dispose() {
+    _firestoreSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _startFirestoreRealtimeSync() {
+    if (!FirebaseService.isInitialized) return;
+    _firestoreSubscription?.cancel();
+    _firestoreSubscription = FirebaseFirestore.instance.collection('teams').snapshots().listen((snapshot) {
+      final teams = snapshot.docs.map((doc) => TeamModel.fromJson(doc.data())).toList();
+      debugPrint('[Firestore Real-time Stream] Live update received: ${teams.length} teams synced from Firebase.');
+      state = state.copyWith(allTeams: teams);
+      _updateActiveEventRegistration(teams);
+    }, onError: (e) {
+      debugPrint('[Firestore Real-time Stream Error] $e');
+    });
+  }
+
+  Future<void> fetchOnlyFromFirebase() async {
+    if (!FirebaseService.isInitialized) {
+      debugPrint('[Firebase Organizer/Judge] Firebase is not initialized. Using local state.');
+      return;
+    }
+    try {
+      debugPrint('[Firebase Organizer/Judge] Fetching live teams directly from Cloud Firestore...');
+      final snapshot = await FirebaseFirestore.instance.collection('teams').get();
+      final teams = snapshot.docs.map((doc) => TeamModel.fromJson(doc.data())).toList();
+      state = state.copyWith(allTeams: teams);
+      debugPrint('[Firebase Organizer/Judge] Successfully loaded ${teams.length} live teams exclusively from Firebase.');
+    } catch (e) {
+      debugPrint('[Firebase Organizer/Judge Error] $e');
+    }
   }
 
   Future<void> _loadTeams() async {
